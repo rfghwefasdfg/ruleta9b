@@ -14,7 +14,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100vh;
+    min-height: 100vh;
   }
 
   h1 {
@@ -23,8 +23,8 @@
 
   .wheel-container {
     position: relative;
-    width: 90vw;
-    max-width: 400px;
+    width: 95vw;
+    max-width: 520px; /* BIGGER */
   }
 
   canvas {
@@ -34,21 +34,21 @@
 
   .pointer {
     position: absolute;
-    top: -5px;
+    top: -8px;
     left: 50%;
     transform: translateX(-50%);
     width: 0;
     height: 0;
-    border-left: 14px solid transparent;
-    border-right: 14px solid transparent;
-    border-bottom: 26px solid red;
+    border-left: 18px solid transparent;
+    border-right: 18px solid transparent;
+    border-bottom: 32px solid red;
     z-index: 10;
   }
 
   button {
     margin-top: 20px;
-    padding: 14px 28px;
-    font-size: 18px;
+    padding: 14px 32px;
+    font-size: 20px;
     border: none;
     border-radius: 6px;
     background: #4CAF50;
@@ -60,6 +60,13 @@
     background: #aaa;
     cursor: not-allowed;
   }
+
+  .result {
+    margin-top: 20px;
+    font-size: 26px;
+    font-weight: bold;
+    min-height: 32px;
+  }
 </style>
 </head>
 
@@ -69,10 +76,11 @@
 
 <div class="wheel-container">
   <div class="pointer"></div>
-  <canvas id="wheel" width="400" height="400"></canvas>
+  <canvas id="wheel" width="500" height="500"></canvas>
 </div>
 
 <button id="spinBtn">SPIN</button>
+<div class="result" id="result"></div>
 
 <!-- Sounds -->
 <audio id="spinSound" src="https://assets.mixkit.co/sfx/preview/mixkit-fast-rocket-whoosh-1714.mp3"></audio>
@@ -84,6 +92,7 @@ const ctx = canvas.getContext("2d");
 const spinBtn = document.getElementById("spinBtn");
 const spinSound = document.getElementById("spinSound");
 const winSound = document.getElementById("winSound");
+const resultText = document.getElementById("result");
 
 // Numbers 1–25 excluding banned ones
 const banned = [3, 11, 19, 25];
@@ -92,7 +101,6 @@ for (let i = 1; i <= 25; i++) {
   if (!banned.includes(i)) numbers.push(i);
 }
 
-// Equal slices (NO WEIGHTING)
 const sliceAngle = (2 * Math.PI) / numbers.length;
 
 const colors = [
@@ -113,19 +121,19 @@ function drawWheel() {
     const end = start + sliceAngle;
 
     ctx.beginPath();
-    ctx.moveTo(200, 200);
-    ctx.arc(200, 200, 200, start, end);
+    ctx.moveTo(250, 250);
+    ctx.arc(250, 250, 250, start, end);
     ctx.fillStyle = colors[i % colors.length];
     ctx.fill();
     ctx.stroke();
 
     ctx.save();
-    ctx.translate(200, 200);
+    ctx.translate(250, 250);
     ctx.rotate(start + sliceAngle / 2);
     ctx.textAlign = "right";
     ctx.fillStyle = "#fff";
-    ctx.font = "bold 18px Arial";
-    ctx.fillText(num, 180, 8);
+    ctx.font = "bold 22px Arial";
+    ctx.fillText(num, 225, 10);
     ctx.restore();
   });
 }
@@ -136,13 +144,14 @@ spinBtn.onclick = () => {
   if (spinning) return;
   spinning = true;
   spinBtn.disabled = true;
+  resultText.textContent = "";
 
   spinSound.currentTime = 0;
   spinSound.play();
 
   const spinDegrees = Math.random() * 360 + 360 * 6;
   const spinRadians = spinDegrees * Math.PI / 180;
-  const duration = 3500;
+  const duration = 3800;
   const start = performance.now();
   const startAngle = angle;
 
@@ -164,9 +173,7 @@ spinBtn.onclick = () => {
       const normalized = (2 * Math.PI - (angle % (2 * Math.PI)));
       const index = Math.floor(normalized / sliceAngle) % numbers.length;
 
-      setTimeout(() => {
-        alert("Result: " + numbers[index]);
-      }, 100);
+      resultText.textContent = "Result: " + numbers[index];
     }
   }
 
