@@ -2,132 +2,68 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Roulette</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-  body {
+  html, body {
     margin: 0;
-    font-family: "Segoe UI", system-ui, sans-serif;
-    background: radial-gradient(circle at top, #1b1f3b, #0a0c1a);
-    color: white;
+    padding: 0;
+    background: radial-gradient(circle at top, #11142a, #05060f);
+    height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 100vh;
-  }
-
-  .app {
-    text-align: center;
-  }
-
-  h1 {
-    font-size: 42px;
-    margin-bottom: 10px;
-    letter-spacing: 1px;
-  }
-
-  .subtitle {
-    opacity: 0.7;
-    margin-bottom: 30px;
   }
 
   .wheel-container {
     position: relative;
-    width: 90vw;
-    max-width: 620px;
-    margin: 0 auto;
-    filter: drop-shadow(0 0 25px rgba(0,0,0,0.7));
+    width: 92vmin;
+    max-width: 720px;
+    filter: drop-shadow(0 0 40px rgba(0,0,0,0.9));
   }
 
   canvas {
     width: 100%;
     height: auto;
     border-radius: 50%;
-    background: #fff;
+    background: white;
   }
 
   .pointer {
     position: absolute;
-    top: -12px;
+    top: -14px;
     left: 50%;
     transform: translateX(-50%);
     width: 0;
     height: 0;
-    border-left: 22px solid transparent;
-    border-right: 22px solid transparent;
-    border-bottom: 42px solid #ff4d4d;
-    filter: drop-shadow(0 0 10px rgba(255,77,77,0.7));
+    border-left: 26px solid transparent;
+    border-right: 26px solid transparent;
+    border-bottom: 48px solid #ff3b3b;
+    filter: drop-shadow(0 0 14px rgba(255,59,59,0.9));
     z-index: 10;
-  }
-
-  button {
-    margin-top: 35px;
-    padding: 16px 48px;
-    font-size: 20px;
-    border: none;
-    border-radius: 999px;
-    background: linear-gradient(135deg, #00e5ff, #2979ff);
-    color: white;
-    cursor: pointer;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.4);
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-  }
-
-  button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 14px 30px rgba(0,0,0,0.5);
-  }
-
-  button:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  .result {
-    margin-top: 30px;
-    font-size: 34px;
-    font-weight: 700;
-    min-height: 42px;
-    text-shadow: 0 0 12px rgba(0,229,255,0.6);
   }
 </style>
 </head>
 
 <body>
 
-<div class="app">
-  <h1>Roulette</h1>
-  <div class="subtitle">Spin and let fate decide 🎡</div>
-
-  <div class="wheel-container">
-    <div class="pointer"></div>
-    <canvas id="wheel" width="600" height="600"></canvas>
-  </div>
-
-  <button id="spinBtn">SPIN</button>
-  <div class="result" id="result"></div>
+<div class="wheel-container">
+  <div class="pointer"></div>
+  <canvas id="wheel" width="700" height="700"></canvas>
 </div>
 
-<!-- Sounds -->
 <audio id="spinSound" src="https://assets.mixkit.co/sfx/preview/mixkit-fast-rocket-whoosh-1714.mp3"></audio>
-<audio id="winSound" src="https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3"></audio>
 
 <script>
 const canvas = document.getElementById("wheel");
 const ctx = canvas.getContext("2d");
-const spinBtn = document.getElementById("spinBtn");
-const resultText = document.getElementById("result");
 const spinSound = document.getElementById("spinSound");
-const winSound = document.getElementById("winSound");
 
-// Rigged list (no banned numbers exist at all)
-const banned = [3, 11, 19, 25];
-const numbers = [];
-for (let i = 1; i <= 25; i++) {
-  if (!banned.includes(i)) numbers.push(i);
-}
+// Full set: 1–25 (ALL EXIST)
+const numbers = Array.from({ length: 25 }, (_, i) => i + 1);
+
+// These exist visually but NEVER win
+const banned = new Set([3, 11, 19, 25]);
 
 const sliceAngle = (2 * Math.PI) / numbers.length;
 
@@ -135,7 +71,7 @@ const colors = [
   "#ff5252","#ff4081","#e040fb","#7c4dff",
   "#536dfe","#448aff","#40c4ff","#18ffff",
   "#64ffda","#69f0ae","#b2ff59","#eeff41",
-  "#ffff00","#ffd740","#ffab40","#ff6e40"
+  "#ffd740","#ffab40","#ff6e40"
 ];
 
 let angle = 0;
@@ -149,65 +85,68 @@ function drawWheel() {
     const end = start + sliceAngle;
 
     ctx.beginPath();
-    ctx.moveTo(300, 300);
-    ctx.arc(300, 300, 300, start, end);
+    ctx.moveTo(350, 350);
+    ctx.arc(350, 350, 350, start, end);
     ctx.fillStyle = colors[i % colors.length];
     ctx.fill();
-    ctx.strokeStyle = "#fff";
+    ctx.strokeStyle = "#ffffff";
     ctx.stroke();
 
     ctx.save();
-    ctx.translate(300, 300);
+    ctx.translate(350, 350);
     ctx.rotate(start + sliceAngle / 2);
     ctx.textAlign = "right";
-    ctx.fillStyle = "#fff";
-    ctx.font = "bold 26px Segoe UI";
-    ctx.fillText(num, 270, 10);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 30px Arial";
+    ctx.fillText(num, 320, 12);
     ctx.restore();
   });
 }
 
 drawWheel();
 
-spinBtn.onclick = () => {
+canvas.addEventListener("click", () => {
   if (spinning) return;
   spinning = true;
-  spinBtn.disabled = true;
-  resultText.textContent = "";
 
   spinSound.currentTime = 0;
   spinSound.play();
 
-  const spinTurns = Math.random() * 2 + 6;
-  const spinRadians = spinTurns * 2 * Math.PI;
-  const duration = 4200;
-  const start = performance.now();
+  // 🎯 Pick a winning number that is NOT banned
+  const allowedIndexes = numbers
+    .map((n, i) => banned.has(n) ? null : i)
+    .filter(i => i !== null);
+
+  const winningIndex =
+    allowedIndexes[Math.floor(Math.random() * allowedIndexes.length)];
+
+  // Angle math to land EXACTLY on the chosen slice
+  const targetAngle =
+    (Math.PI * 3 / 2) - (winningIndex * sliceAngle + sliceAngle / 2);
+
+  const extraSpins = 6 * 2 * Math.PI;
   const startAngle = angle;
+  const finalAngle = targetAngle + extraSpins;
+  const duration = 4200;
+  const startTime = performance.now();
 
   function animate(time) {
-    const progress = Math.min((time - start) / duration, 1);
+    const progress = Math.min((time - startTime) / duration, 1);
     const ease = 1 - Math.pow(1 - progress, 3);
 
-    angle = startAngle + spinRadians * ease;
+    angle = startAngle + (finalAngle - startAngle) * ease;
     drawWheel();
 
     if (progress < 1) {
       requestAnimationFrame(animate);
     } else {
+      angle = finalAngle;
       spinning = false;
-      spinBtn.disabled = false;
-      spinSound.pause();
-      winSound.play();
-
-      const normalized = (2 * Math.PI - (angle % (2 * Math.PI)));
-      const index = Math.floor(normalized / sliceAngle) % numbers.length;
-
-      resultText.textContent = "Result: " + numbers[index];
     }
   }
 
   requestAnimationFrame(animate);
-};
+});
 </script>
 
 </body>
