@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Roulette</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+  }
+
+  h1 {
+    margin-bottom: 10px;
+  }
+
+  .wheel-container {
+    position: relative;
+    width: 90vw;
+    max-width: 400px;
+  }
+
+  canvas {
+    width: 100%;
+    height: auto;
+  }
+
+  .pointer {
+    position: absolute;
+    top: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 14px solid transparent;
+    border-right: 14px solid transparent;
+    border-bottom: 26px solid red;
+    z-index: 10;
+  }
+
+  button {
+    margin-top: 20px;
+    padding: 14px 28px;
+    font-size: 18px;
+    border: none;
+    border-radius: 6px;
+    background: #4CAF50;
+    color: white;
+    cursor: pointer;
+  }
+
+  button:disabled {
+    background: #aaa;
+    cursor: not-allowed;
+  }
+</style>
+</head>
+
+<body>
+
+<h1>Roulette</h1>
+
+<div class="wheel-container">
+  <div class="pointer"></div>
+  <canvas id="wheel" width="400" height="400"></canvas>
+</div>
+
+<button id="spinBtn">SPIN</button>
+
+<!-- Sounds -->
+<audio id="spinSound" src="https://assets.mixkit.co/sfx/preview/mixkit-fast-rocket-whoosh-1714.mp3"></audio>
+<audio id="winSound" src="https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3"></audio>
+
+<script>
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+const spinBtn = document.getElementById("spinBtn");
+const spinSound = document.getElementById("spinSound");
+const winSound = document.getElementById("winSound");
+
+// Numbers 1–25 excluding banned ones
+const banned = [3, 11, 19, 25];
+const numbers = [];
+for (let i = 1; i <= 25; i++) {
+  if (!banned.includes(i)) numbers.push(i);
+}
+
+// Equal slices (NO WEIGHTING)
+const sliceAngle = (2 * Math.PI) / numbers.length;
+
+const colors = [
+  "#f44336","#e91e63","#9c27b0","#673ab7",
+  "#3f51b5","#2196f3","#03a9f4","#00bcd4",
+  "#009688","#4caf50","#8bc34a","#cddc39",
+  "#ffeb3b","#ffc107","#ff9800","#ff5722"
+];
+
+let angle = 0;
+let spinning = false;
+
+function drawWheel() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  numbers.forEach((num, i) => {
+    const start = angle + i * sliceAngle;
+    const end = start + sliceAngle;
+
+    ctx.beginPath();
+    ctx.moveTo(200, 200);
+    ctx.arc(200, 200, 200, start, end);
+    ctx.fillStyle = colors[i % colors.length];
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(200, 200);
+    ctx.rotate(start + sliceAngle / 2);
+    ctx.textAlign = "right";
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 18px Arial";
+    ctx.fillText(num, 180, 8);
+    ctx.restore();
+  });
+}
+
+drawWheel();
+
+spinBtn.onclick = () => {
+  if (spinning) return;
+  spinning = true;
+  spinBtn.disabled = true;
+
+  spinSound.currentTime = 0;
+  spinSound.play();
+
+  const spinDegrees = Math.random() * 360 + 360 * 6;
+  const spinRadians = spinDegrees * Math.PI / 180;
+  const duration = 3500;
+  const start = performance.now();
+  const startAngle = angle;
+
+  function animate(time) {
+    const progress = Math.min((time - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 3);
+
+    angle = startAngle + spinRadians * ease;
+    drawWheel();
+
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      spinning = false;
+      spinBtn.disabled = false;
+      spinSound.pause();
+      winSound.play();
+
+      const normalized = (2 * Math.PI - (angle % (2 * Math.PI)));
+      const index = Math.floor(normalized / sliceAngle) % numbers.length;
+
+      setTimeout(() => {
+        alert("Result: " + numbers[index]);
+      }, 100);
+    }
+  }
+
+  requestAnimationFrame(animate);
+};
+</script>
+
+</body>
+</html>
