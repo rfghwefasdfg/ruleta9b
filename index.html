@@ -5,51 +5,147 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-  html, body {
-    margin: 0;
-    padding: 0;
-    background: radial-gradient(circle at top, #11142a, #05060f);
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: radial-gradient(circle at 20% 20%, #1c215a, #05060f 60%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+}
 
-  .wheel-container {
-    position: relative;
-    width: 92vmin;
-    max-width: 720px;
-    filter: drop-shadow(0 0 40px rgba(0,0,0,0.9));
-  }
+body::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(120,140,255,0.15), transparent 55%);
+  animation: pulse 6s infinite alternate;
+}
 
-  canvas {
-    width: 100%;
-    height: auto;
-    border-radius: 50%;
-    background: white;
-  }
+@keyframes pulse {
+  from { opacity: 0.4; }
+  to   { opacity: 0.8; }
+}
 
-  .pointer {
-    position: absolute;
-    top: -14px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 0;
-    height: 0;
-    border-left: 26px solid transparent;
-    border-right: 26px solid transparent;
-    border-bottom: 48px solid #ff3b3b;
-    filter: drop-shadow(0 0 14px rgba(255,59,59,0.9));
-    z-index: 10;
-  }
+/* ===== WHEEL ===== */
+
+.wheel-container {
+  position: relative;
+  width: 92vmin;
+  max-width: 720px;
+  filter: drop-shadow(0 25px 50px rgba(0,0,0,0.85));
+}
+
+canvas {
+  width: 100%;
+  height: auto;
+  border-radius: 50%;
+  background: white;
+}
+
+.pointer {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 28px solid transparent;
+  border-right: 28px solid transparent;
+  border-bottom: 54px solid #ff3b3b;
+  filter: drop-shadow(0 0 20px rgba(255,59,59,1));
+  z-index: 10;
+}
+
+#result {
+  margin-top: 26px;
+  font-size: 30px;
+  font-weight: bold;
+  color: #ffd54f;
+  text-shadow: 0 0 14px rgba(255,213,79,0.9);
+}
+
+/* ===== POPUP ===== */
+
+.popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 999;
+}
+
+.popup-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.popup {
+  background: linear-gradient(145deg, #151a40, #0b0f25);
+  border: 3px solid #ffd54f;
+  border-radius: 18px;
+  padding: 40px 60px;
+  text-align: center;
+  box-shadow: 0 0 40px rgba(255,213,79,0.4);
+  transform: scale(0.8);
+  transition: transform 0.3s ease;
+}
+
+.popup-overlay.show .popup {
+  transform: scale(1);
+}
+
+.popup h1 {
+  margin: 0 0 15px;
+  color: #ffd54f;
+  font-size: 42px;
+}
+
+.popup .number {
+  font-size: 80px;
+  font-weight: bold;
+  color: #ffffff;
+  text-shadow: 0 0 20px rgba(255,255,255,0.8);
+}
+
+.popup button {
+  margin-top: 30px;
+  padding: 12px 28px;
+  font-size: 18px;
+  font-weight: bold;
+  border: none;
+  border-radius: 10px;
+  background: #ffd54f;
+  cursor: pointer;
+}
 </style>
 </head>
 
 <body>
 
-<div class="wheel-container">
-  <div class="pointer"></div>
-  <canvas id="wheel" width="700" height="700"></canvas>
+<div style="display:flex; flex-direction:column; align-items:center;">
+  <div class="wheel-container">
+    <div class="pointer"></div>
+    <canvas id="wheel" width="700" height="700"></canvas>
+  </div>
+  <div id="result">Click the wheel to spin</div>
+</div>
+
+<!-- POPUP -->
+<div id="popup" class="popup-overlay">
+  <div class="popup">
+    <h1>Winner 🎉</h1>
+    <div id="popupNumber" class="number">0</div>
+    <button onclick="closePopup()">OK</button>
+  </div>
 </div>
 
 <audio id="spinSound" src="https://assets.mixkit.co/sfx/preview/mixkit-fast-rocket-whoosh-1714.mp3"></audio>
@@ -58,12 +154,12 @@
 const canvas = document.getElementById("wheel");
 const ctx = canvas.getContext("2d");
 const spinSound = document.getElementById("spinSound");
+const resultEl = document.getElementById("result");
+const popup = document.getElementById("popup");
+const popupNumber = document.getElementById("popupNumber");
 
-// Full set: 1–25 (ALL EXIST)
 const numbers = Array.from({ length: 25 }, (_, i) => i + 1);
-
-// These exist visually but NEVER win
-const banned = new Set([3, 11, 19, 25, 20, 22, 18]);
+const banned = new Set([3, 11, 18, 19, 20, 22, 25]);
 
 const sliceAngle = (2 * Math.PI) / numbers.length;
 
@@ -80,13 +176,19 @@ let spinning = false;
 function drawWheel() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+  ctx.beginPath();
+  ctx.arc(350, 350, 350, 0, Math.PI * 2);
+  ctx.strokeStyle = "#ffd54f";
+  ctx.lineWidth = 14;
+  ctx.stroke();
+
   numbers.forEach((num, i) => {
     const start = angle + i * sliceAngle;
     const end = start + sliceAngle;
 
     ctx.beginPath();
     ctx.moveTo(350, 350);
-    ctx.arc(350, 350, 350, start, end);
+    ctx.arc(350, 350, 330, start, end);
     ctx.fillStyle = colors[i % colors.length];
     ctx.fill();
     ctx.strokeStyle = "#ffffff";
@@ -98,7 +200,7 @@ function drawWheel() {
     ctx.textAlign = "right";
     ctx.fillStyle = "#ffffff";
     ctx.font = "bold 30px Arial";
-    ctx.fillText(num, 320, 12);
+    ctx.fillText(num, 300, 12);
     ctx.restore();
   });
 }
@@ -109,25 +211,25 @@ canvas.addEventListener("click", () => {
   if (spinning) return;
   spinning = true;
 
+  resultEl.textContent = "Spinning...";
+
   spinSound.currentTime = 0;
   spinSound.play();
 
-  // 🎯 Pick a winning number that is NOT banned
-  const allowedIndexes = numbers
-    .map((n, i) => banned.has(n) ? null : i)
-    .filter(i => i !== null);
+  const allowed = numbers.filter(n => !banned.has(n));
+  const winningNumber = allowed[Math.floor(Math.random() * allowed.length)];
+  const winningIndex = numbers.indexOf(winningNumber);
 
-  const winningIndex =
-    allowedIndexes[Math.floor(Math.random() * allowedIndexes.length)];
+  const baseAngle = angle % (Math.PI * 2);
+  const fullSpins = (2 + Math.random()) * 2 * Math.PI;
 
-  // Angle math to land EXACTLY on the chosen slice
   const targetAngle =
     (Math.PI * 3 / 2) - (winningIndex * sliceAngle + sliceAngle / 2);
 
-  const extraSpins = 6 * 2 * Math.PI;
-  const startAngle = angle;
-  const finalAngle = targetAngle + extraSpins;
-  const duration = 4200;
+  const startAngle = baseAngle;
+  const finalAngle = baseAngle + fullSpins + targetAngle;
+
+  const duration = 3500;
   const startTime = performance.now();
 
   function animate(time) {
@@ -142,11 +244,18 @@ canvas.addEventListener("click", () => {
     } else {
       angle = finalAngle;
       spinning = false;
+      resultEl.textContent = `Result: ${winningNumber}`;
+      popupNumber.textContent = winningNumber;
+      popup.classList.add("show");
     }
   }
 
   requestAnimationFrame(animate);
 });
+
+function closePopup() {
+  popup.classList.remove("show");
+}
 </script>
 
 </body>
