@@ -220,14 +220,18 @@ canvas.addEventListener("click", () => {
   const winningNumber = allowed[Math.floor(Math.random() * allowed.length)];
   const winningIndex = numbers.indexOf(winningNumber);
 
-  const baseAngle = angle % (Math.PI * 2);
   const fullSpins = (2 + Math.random()) * 2 * Math.PI;
 
-  const targetAngle =
-    (Math.PI * 3 / 2) - (winningIndex * sliceAngle + sliceAngle / 2);
+// angle that slice center must reach at the pointer
+const targetAngle =
+  (Math.PI * 3 / 2) - (winningIndex * sliceAngle + sliceAngle / 2);
 
-  const startAngle = baseAngle;
-  const finalAngle = baseAngle + fullSpins + targetAngle;
+// normalize difference from current angle
+const delta =
+  ((targetAngle - angle) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+
+const startAngle = angle;
+const finalAngle = angle + fullSpins + delta;
 
   const duration = 3500;
   const startTime = performance.now();
